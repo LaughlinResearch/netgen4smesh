@@ -7,8 +7,9 @@ package:
   version: {{ version }}
 
 source:
-  git_url: https://github.com/NGSolve/netgen.git
-  git_rev: v{{ version }}
+  fn: netgen_v{{ version }}.tar.gz
+  url: https://github.com/NGSolve/netgen/archive/v{{ version }}.tar.gz
+  sha256: {{ sha256 }}
   patches:
     - salome.patch      # [unix]
     - salome_win.patch  # [win]
