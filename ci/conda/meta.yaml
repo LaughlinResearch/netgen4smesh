@@ -1,0 +1,43 @@
+{% set name = "netgen4smesh" %}
+{% set version = "6.2.1804" %}
+{% set sha256 = "81311f4eabd6c71367607d4dc07bea77c3d4c449d1700d79c9865be9c1314fa5" %}
+
+package:
+  name: {{ name }}
+  version: {{ version }}
+
+source:
+  git_url: https://github.com/NGSolve/netgen.git
+  git_rev: v{{ version }}
+  patches:
+    - salome.patch      # [unix]
+    - salome_win.patch  # [win]
+
+build:
+  number: 0
+
+requirements:
+  build:
+    - {{ compiler('cxx') }}
+    - cmake
+    - ninja
+  host:
+    - occt ==7.4.0
+    - zlib
+
+  run:
+    - occt ==7.4.0
+    - zlib
+
+about:
+  home: https://sourceforge.net/projects/netgen-mesher/
+  license: LGPL2.1
+  license_family: LGPL
+  summary: Netgen mesh generator
+  description: NETGEN is an automatic 3d tetrahedral mesh generator.
+               It accepts input from constructive solid geometry (CSG) or boundary representation (BRep) from
+               STL file format. The connection to a geometry kernel allows the handling of IGES and STEP files.
+               NETGEN contains modules for mesh optimization and hierarchical mesh refinement.
+               Netgen is open source based on the LGPL license. It is available for Unix/Linux and Windows.
+  doc_url: http://www.hpfem.jku.at/netgen/
+  dev_url: https://sourceforge.net/projects/netgen-mesher/
