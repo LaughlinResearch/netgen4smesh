@@ -20,6 +20,9 @@ build:
 requirements:
   build:
     - {{ compiler('cxx') }}
+    - {{ cdt('mesa-libgl-devel') }}  # [linux]
+    - {{ cdt('libxi-devel') }}       # [linux]
+    - {{ cdt('libxext-devel') }}     # [linux]
     - cmake
     - ninja
   host:
