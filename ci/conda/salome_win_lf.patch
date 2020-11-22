@@ -1,0 +1,217 @@
+diff --git a/libsrc/meshing/findip.hpp b/libsrc/meshing/findip.hpp
+index f5d8e42..31d5a4c 100644
+--- a/libsrc/meshing/findip.hpp
++++ b/libsrc/meshing/findip.hpp
+@@ -75,6 +75,9 @@ inline int FindInnerPoint (POINTArray & points,
+   static int timer = NgProfiler::CreateTimer ("FindInnerPoint");
+   NgProfiler::RegionTimer reg (timer);
+ 
++  if (points.Size() < 3)
++	  return 0;
++
+   Array<Vec3d> a;
+   Array<double> c;
+   Mat<3> m, inv;
+diff --git a/libsrc/meshing/improve3.cpp b/libsrc/meshing/improve3.cpp
+index 0dde9ba..672e1e7 100644
+--- a/libsrc/meshing/improve3.cpp
++++ b/libsrc/meshing/improve3.cpp
+@@ -1207,6 +1207,7 @@ void MeshOptimize3d :: SwapImprove (Mesh & mesh, OPTIMIZEGOAL goal,
+ 
+ 	      tetused = false;
+ 	      tetused[0] = true;
++		  int nbtetused = 0;
+ 
+ 	      for (int l = 2; l < nsuround; l++)
+ 		{
+@@ -1227,10 +1228,13 @@ void MeshOptimize3d :: SwapImprove (Mesh & mesh, OPTIMIZEGOAL goal,
+ 
+ 			      tetused[k] = true; 
+ 			      suroundpts[l] = newpi;
++				  ++nbtetused;
+ 			    }
+ 			}
+ 		}
+-	      
++
++		  if (nbtetused < nsuround)
++			  continue;
+ 	      
+ 	      bad1 = 0;
+ 	      for (int k = 0; k < nsuround; k++)
+diff --git a/libsrc/meshing/meshtype.cpp b/libsrc/meshing/meshtype.cpp
+index 5fab1c5..3c56ac0 100644
+--- a/libsrc/meshing/meshtype.cpp
++++ b/libsrc/meshing/meshtype.cpp
+@@ -1,4 +1,5 @@
+ #include <mystdlib.h>
++#include <float.h>
+ 
+ #include "meshing.hpp"  
+ 
+@@ -703,7 +704,7 @@ namespace netgen
+ 
+         double det = trans.Det();
+ 
+-        if (det <= 0)
++        if (det <= DBL_MIN)
+           err += 1e12;
+         else
+           err += frob * frob / det;
+@@ -759,7 +760,7 @@ namespace netgen
+ 
+             double det = trans(0,0)*trans(1,1)-trans(1,0)*trans(0,1);
+ 
+-            if (det <= 0)
++            if (det <= DBL_MIN)
+               {
+                 dd = 0;
+                 return 1e12;
+@@ -843,7 +844,7 @@ namespace netgen
+           = dtrans(0,0) * trans(1,1) - trans(0,1) * dtrans(1,0)
+           + trans(0,0) * dtrans(1,1) - dtrans(0,1) * trans(1,0);
+ 
+-        if (det <= 0)
++        if (det <= DBL_MIN)
+           err += 1e12;
+         else
+           {
+@@ -893,7 +894,7 @@ namespace netgen
+         frob /= 2;
+ 
+         double det = trans.Det();
+-        if (det <= 0)
++        if (det <= DBL_MIN)
+           err += 1e12;
+         else
+           err += frob * frob / det;
+@@ -2119,7 +2120,7 @@ namespace netgen
+ 
+         double det = -trans.Det();
+       
+-        if (det <= 0)
++        if (det <= DBL_MIN)
+           err += 1e12;
+         else
+           err += frob * frob * frob / det;
+@@ -2191,7 +2192,7 @@ namespace netgen
+         ddet *= -1;
+ 
+       
+-        if (det <= 0)
++        if (det <= DBL_MIN)
+           err += 1e12;
+         else
+           {
+@@ -2273,7 +2274,7 @@ namespace netgen
+       
+         det *= -1;
+       
+-        if (det <= 0)
++        if (det <= DBL_MIN)
+           err += 1e12;
+         else
+           {
+diff --git a/libsrc/occ/Partition_Inter3d.cxx b/libsrc/occ/Partition_Inter3d.cxx
+index 38787fb..af65f99 100644
+--- a/libsrc/occ/Partition_Inter3d.cxx
++++ b/libsrc/occ/Partition_Inter3d.cxx
+@@ -206,7 +206,7 @@ static void PutInBounds (const TopoDS_Face&          F,
+   Handle (Geom_Surface) S   = BRep_Tool::Surface(F,L);
+ 
+   if (S->IsKind(STANDARD_TYPE(Geom_RectangularTrimmedSurface))) {
+-    S = (*(Handle_Geom_RectangularTrimmedSurface*)&S)->BasisSurface();
++	S = Handle(Geom_RectangularTrimmedSurface)::DownCast(S)->BasisSurface();
+   }
+   if (!S->IsUPeriodic() && !S->IsVPeriodic())
+     return;
+@@ -702,7 +702,7 @@ TopTools_MapOfShape& Partition_Inter3d::TouchedFaces()
+ //purpose  : 
+ //=======================================================================
+ 
+-Handle_BRepAlgo_AsDes Partition_Inter3d::AsDes() const 
++Handle(BRepAlgo_AsDes) Partition_Inter3d::AsDes() const 
+ {
+   return myAsDes;
+ }
+@@ -829,7 +829,7 @@ TopoDS_Vertex Partition_Inter3d::ReplaceSameDomainV(const TopoDS_Vertex& V,
+ //purpose  : 
+ //=======================================================================
+ 
+-Handle_BRepAlgo_AsDes Partition_Inter3d::SectionEdgesAD() const
++Handle(BRepAlgo_AsDes) Partition_Inter3d::SectionEdgesAD() const
+ {
+   return mySectionEdgesAD;
+ }
+diff --git a/libsrc/occ/Partition_Inter3d.hxx b/libsrc/occ/Partition_Inter3d.hxx
+index 93af077..f2133c2 100644
+--- a/libsrc/occ/Partition_Inter3d.hxx
++++ b/libsrc/occ/Partition_Inter3d.hxx
+@@ -96,13 +96,13 @@ public:
+    void FacesPartition(const TopoDS_Face& F1,const TopoDS_Face& F2) ;
+    Standard_Boolean IsDone(const TopoDS_Face& F1,const TopoDS_Face& F2) const;
+    TopTools_MapOfShape& TouchedFaces() ;
+-   Handle_BRepAlgo_AsDes AsDes() const;
++   Handle(BRepAlgo_AsDes) AsDes() const;
+    TopTools_MapOfShape& NewEdges() ;
+    Standard_Boolean HasSameDomainF(const TopoDS_Shape& F) const;
+    Standard_Boolean IsSameDomainF(const TopoDS_Shape& F1,const TopoDS_Shape& F2) const;
+    const TopTools_ListOfShape& SameDomain(const TopoDS_Face& F) const;
+    TopoDS_Vertex ReplaceSameDomainV(const TopoDS_Vertex& V,const TopoDS_Edge& E) const;
+-   Handle_BRepAlgo_AsDes SectionEdgesAD() const;
++   Handle(BRepAlgo_AsDes) SectionEdgesAD() const;
+    Standard_Boolean IsSectionEdge(const TopoDS_Edge& E) const;
+    Standard_Boolean HasSectionEdge(const TopoDS_Face& F) const;
+    Standard_Boolean IsSplitOn(const TopoDS_Edge& NewE,const TopoDS_Edge& OldE,const TopoDS_Face& F) const;
+@@ -134,11 +134,11 @@ private:
+ 
+    // Fields PRIVATE
+    //
+-   Handle_BRepAlgo_AsDes myAsDes;
++   Handle(BRepAlgo_AsDes) myAsDes;
+    TopTools_DataMapOfShapeListOfShape myDone;
+    TopTools_MapOfShape myTouched;
+    TopTools_MapOfShape myNewEdges;
+-   Handle_BRepAlgo_AsDes mySectionEdgesAD;
++   Handle(BRepAlgo_AsDes) mySectionEdgesAD;
+    TopTools_DataMapOfShapeListOfShape mySameDomainFM;
+    TopTools_DataMapOfShapeShape mySameDomainVM;
+ 
+diff --git a/libsrc/occ/Partition_Spliter.hxx b/libsrc/occ/Partition_Spliter.hxx
+index e75e989..1cb6c57 100644
+--- a/libsrc/occ/Partition_Spliter.hxx
++++ b/libsrc/occ/Partition_Spliter.hxx
+@@ -143,7 +143,7 @@ private:
+    TopTools_DataMapOfShapeShape myFaceShapeMap;
+    TopTools_DataMapOfShapeShape myInternalFaces;
+    TopTools_DataMapOfShapeShape myIntNotClFaces;
+-   Handle_BRepAlgo_AsDes myAsDes;
++   Handle(BRepAlgo_AsDes) myAsDes;
+    BRepAlgo_Image myImagesFaces;
+    BRepAlgo_Image myImagesEdges;
+    BRepAlgo_Image myImageShape;
+diff --git a/libsrc/occ/utilities.h b/libsrc/occ/utilities.h
+index e2348ec..71953b8 100644
+--- a/libsrc/occ/utilities.h
++++ b/libsrc/occ/utilities.h
+@@ -33,6 +33,7 @@
+ 
+ #include <string>
+ #include <iostream>
++#include <iomanip>
+ #include <cstdlib>
+ // #include "SALOME_Log.hxx"
+ 
+diff --git a/nglib/nglib.h b/nglib/nglib.h
+index 8a78da0..2001a2c 100644
+--- a/nglib/nglib.h
++++ b/nglib/nglib.h
+@@ -24,7 +24,7 @@
+ // Philippose - 14.02.2009
+ // Modifications for creating a DLL in Windows
+ #ifdef WIN32
+-   #ifdef NGLIB_EXPORTS || nglib_EXPORTS
++   #if defined NGLIB_EXPORTS || defined nglib_EXPORTS
+       #define DLL_HEADER   __declspec(dllexport)
+    #else
+       #define DLL_HEADER   __declspec(dllimport)
