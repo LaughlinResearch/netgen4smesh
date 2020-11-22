@@ -736,6 +736,16 @@ index a1f60db..35cee52 100644
  	}
 -  };
 +  }
- 
- 
- 
+diff --git a/nglib/nglib.h b/nglib/nglib.h
+index 8a78da0..2001a2c 100644
+--- a/nglib/nglib.h
++++ b/nglib/nglib.h
+@@ -24,7 +24,7 @@
+ // Philippose - 14.02.2009
+ // Modifications for creating a DLL in Windows
+ #ifdef WIN32
+-   #ifdef NGLIB_EXPORTS || nglib_EXPORTS
++   #if defined NGLIB_EXPORTS || defined nglib_EXPORTS
+       #define DLL_HEADER   __declspec(dllexport)
+    #else
+       #define DLL_HEADER   __declspec(dllimport)
