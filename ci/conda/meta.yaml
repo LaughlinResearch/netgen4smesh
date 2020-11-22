@@ -12,8 +12,7 @@ source:
   sha256: {{ sha256 }}
   patches:
     - salome.patch      # [unix]
-    - salome_win_lf.patch  # [win]
-    - salome_win_crlf.patch  # [win]
+    - salome_win.patch  # [win]
 
 build:
   number: 0
