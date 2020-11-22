@@ -26,11 +26,11 @@ requirements:
     - cmake
     - ninja
   host:
-    - occt ==7.4.0
+    - occt ==7.5.0
     - zlib
 
   run:
-    - occt ==7.4.0
+    - occt ==7.5.0
     - zlib
 
 about:
